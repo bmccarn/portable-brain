@@ -1,0 +1,47 @@
+types:
+  Question:
+    group: work
+    folder: questions
+    workflow: true
+    sections:
+      - Question
+      - Context
+      - Approach
+      - Follow-ups
+      - Log
+      - References
+  Finding:
+    group: wiki
+    folder: findings
+    workflow: false
+    sections:
+      - Finding
+      - Evidence
+      - Interpretation
+      - Limitations
+      - References
+  Hypothesis:
+    group: work
+    folder: hypotheses
+    workflow: true
+    sections:
+      - Statement
+      - Rationale
+      - Predictions
+      - Evidence
+      - Follow-ups
+      - Log
+      - References
+  Experiment:
+    group: work
+    folder: experiments
+    workflow: true
+    sections:
+      - Objective
+      - Method
+      - Results
+      - Analysis
+      - Conclusion
+      - Follow-ups
+      - Log
+      - References

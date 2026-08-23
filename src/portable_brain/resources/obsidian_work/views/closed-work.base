@@ -1,0 +1,21 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'file.inFolder("work")'
+    - 'file.name != "index"'
+    - 'type != null'
+    - 'pb_work_state != null'
+views:
+  - type: table
+    name: Closed work
+    filters:
+      or:
+        - 'pb_work_state == "done"'
+        - 'pb_work_state == "dropped"'
+    order:
+      - file.name
+      - type
+      - status
+      - pb_work_state
+      - pb_closed_on
+      - pb_owner

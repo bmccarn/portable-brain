@@ -1,0 +1,33 @@
+types:
+  Area:
+    group: wiki
+    folder: areas
+    workflow: false
+    sections:
+      - Purpose
+      - Responsibilities
+      - Current state
+      - Notes
+      - References
+  Goal:
+    group: work
+    folder: goals
+    workflow: true
+    sections:
+      - Outcome
+      - Why it matters
+      - Plan
+      - Progress
+      - Follow-ups
+      - Log
+      - References
+  Inventory Item:
+    group: wiki
+    folder: inventory
+    workflow: false
+    sections:
+      - Description
+      - Location
+      - Condition
+      - Notes
+      - References

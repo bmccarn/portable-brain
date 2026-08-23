@@ -1,0 +1,14 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'file.inFolder("wiki")'
+    - 'file.name != "index"'
+    - 'type != null'
+views:
+  - type: table
+    name: Library
+    order:
+      - file.name
+      - type
+      - status
+      - tags

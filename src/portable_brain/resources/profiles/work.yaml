@@ -1,0 +1,30 @@
+groups:
+  work:
+    description: Strict independently tracked work.
+    strict: true
+types:
+  Decision:
+    group: work
+    folder: .
+    workflow: true
+    sections:
+      - Context
+      - Decision
+      - Consequences
+      - Alternatives considered
+      - Follow-ups
+      - Log
+      - References
+  Project:
+    group: work
+    folder: .
+    workflow: true
+    sections:
+      - Summary
+      - Current state
+      - Scope
+      - Outcomes
+      - Decisions
+      - Follow-ups
+      - Log
+      - References

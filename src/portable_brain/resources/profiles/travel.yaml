@@ -1,0 +1,22 @@
+types:
+  Trip:
+    group: work
+    folder: travel/trips
+    workflow: true
+    sections:
+      - Summary
+      - Dates
+      - Itinerary
+      - Reservations
+      - Follow-ups
+      - Log
+      - References
+  Itinerary:
+    group: wiki
+    folder: travel/itineraries
+    workflow: false
+    sections:
+      - Summary
+      - Schedule
+      - Notes
+      - References
