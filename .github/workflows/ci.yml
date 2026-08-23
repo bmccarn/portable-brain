@@ -49,7 +49,7 @@ jobs:
           uvx --from "$WHEEL" portable-brain init /tmp/smoke --domains personal --work --adapter obsidian claude
           uvx --from "$WHEEL" portable-brain validate /tmp/smoke
           uvx --from "$WHEEL" portable-brain index /tmp/smoke --check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
