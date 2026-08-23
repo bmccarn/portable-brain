@@ -1,0 +1,46 @@
+name: Publish to PyPI
+
+# Publishes the package to PyPI via trusted publishing (OIDC) — no API token stored anywhere.
+# Runs when a GitHub release is published, or by hand (Actions → Publish to PyPI → Run workflow).
+# PyPI side: https://pypi.org/manage/account/publishing/ → add a publisher for project
+# "portable-brain": owner bmccarn, repository portable-brain, workflow publish.yml, environment pypi.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Check metadata renders on PyPI
+        run: uvx twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/portable-brain/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
