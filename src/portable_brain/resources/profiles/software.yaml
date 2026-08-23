@@ -1,0 +1,50 @@
+types:
+  Change:
+    group: work
+    folder: changes
+    workflow: true
+    sections:
+      - Summary
+      - Motivation
+      - Implementation
+      - Rollout
+      - Verification
+      - Follow-ups
+      - Log
+      - References
+  Deployment:
+    group: work
+    folder: deployments
+    workflow: true
+    sections:
+      - Summary
+      - Change set
+      - Environment
+      - Rollout
+      - Verification
+      - Rollback
+      - Follow-ups
+      - Log
+      - References
+  Environment:
+    group: wiki
+    folder: environments
+    workflow: false
+    sections:
+      - Purpose
+      - Access
+      - Configuration
+      - Dependencies
+      - References
+  Incident:
+    group: work
+    folder: incidents
+    workflow: true
+    sections:
+      - Summary
+      - Impact
+      - Timeline
+      - Response
+      - Follow-ups
+      - Log
+      - References

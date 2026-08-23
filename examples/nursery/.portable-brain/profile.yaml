@@ -1,0 +1,157 @@
+schema_version: 1
+spec_version: '0.1'
+okf_version: '0.2'
+default_actor: human:owner
+domains:
+- personal
+modules:
+- work
+groups:
+  inbox:
+    description: Ungated front door; anything may land here and leaves when triaged.
+    strict: false
+  sources:
+    description: Faithful, traceable source material.
+    strict: true
+  wiki:
+    description: Maintained synthesis and durable understanding.
+    strict: false
+  journal:
+    description: Append-only chronological continuity.
+    strict: true
+  work:
+    description: Strict independently tracked work.
+    strict: true
+workflow:
+  states:
+    active: Active
+    blocked: Blocked
+    parked: Parked
+    done: Done
+    dropped: Dropped
+  initial_state: active
+  closed_states:
+  - done
+  - dropped
+  requires_blocked_on:
+  - blocked
+types:
+  Source:
+    group: sources
+    folder: .
+    workflow: false
+    sections:
+    - Citation
+    - Source material
+    - Notes
+  Concept:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Person:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Place:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Organization:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Theme:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Event:
+    group: wiki
+    folder: .
+    workflow: false
+    sections:
+    - Summary
+    - Notes
+    - References
+  Journal:
+    group: journal
+    folder: .
+    workflow: false
+    sections: []
+  Decision:
+    group: work
+    folder: .
+    workflow: true
+    sections:
+    - Context
+    - Decision
+    - Consequences
+    - Alternatives considered
+    - Follow-ups
+    - Log
+    - References
+  Project:
+    group: work
+    folder: .
+    workflow: true
+    sections:
+    - Summary
+    - Current state
+    - Scope
+    - Outcomes
+    - Decisions
+    - Follow-ups
+    - Log
+    - References
+  Area:
+    group: wiki
+    folder: areas
+    workflow: false
+    sections:
+    - Purpose
+    - Responsibilities
+    - Current state
+    - Notes
+    - References
+  Goal:
+    group: work
+    folder: goals
+    workflow: true
+    sections:
+    - Outcome
+    - Why it matters
+    - Plan
+    - Progress
+    - Follow-ups
+    - Log
+    - References
+  Inventory Item:
+    group: wiki
+    folder: inventory
+    workflow: false
+    sections:
+    - Description
+    - Location
+    - Condition
+    - Notes
+    - References
+adapters: []

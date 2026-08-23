@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Install
+        run: uv sync --extra dev
+      - name: Format
+        run: uv run ruff format --check src tests
+      - name: Lint
+        run: uv run ruff check src tests
+      - name: Types
+        run: uv run pyright src tests
+      - name: Tests (contract, starter freshness, example brain)
+        run: uv run pytest -q
+
+  package:
+    name: Build and smoke the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build
+        run: uv build
+      - name: Smoke the built wheel
+        run: |
+          WHEEL=$(ls dist/*.whl)
+          uvx --from "$WHEEL" portable-brain --help
+          uvx --from "$WHEEL" portable-brain init /tmp/smoke --domains personal --work --adapter obsidian claude
+          uvx --from "$WHEEL" portable-brain validate /tmp/smoke
+          uvx --from "$WHEEL" portable-brain index /tmp/smoke --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

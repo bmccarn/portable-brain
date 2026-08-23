@@ -1,0 +1,20 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'file.name != "index"'
+    - 'type != null'
+    - or:
+        - 'file.inFolder("sources")'
+        - 'file.inFolder("wiki")'
+views:
+  - type: table
+    name: Review queue — unverified
+    filters:
+      and:
+        - 'status != "deprecated"'
+        - 'verified == null'
+    order:
+      - file.name
+      - type
+      - status
+      - verified

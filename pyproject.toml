@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portable-brain"
+version = "0.1.0"
+description = "A folder you can drop anything into, that an AI keeps organized as a wiki — portable plain files, OKF-compatible"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Blake McCarn" }]
+keywords = ["markdown", "wiki", "knowledge-base", "notes", "obsidian", "okf", "llm", "ai", "pkm"]
+dependencies = ["PyYAML>=6.0"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Text Processing :: Markup :: Markdown",
+]
+
+[project.urls]
+Homepage = "https://github.com/bmccarn/portable-brain"
+Repository = "https://github.com/bmccarn/portable-brain"
+Changelog = "https://github.com/bmccarn/portable-brain/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = ["pyright>=1.1.404", "pytest>=8.3", "ruff>=0.12"]
+
+[project.scripts]
+portable-brain = "portable_brain.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+portable_brain = [
+  "resources/scaffold/*.md",
+  "resources/scaffold/LICENSE",
+  "resources/scaffold/.gitignore",
+  "resources/profiles/*.yaml",
+  "resources/obsidian/*.md",
+  "resources/obsidian/.obsidian/*.json",
+  "resources/obsidian/views/*.base",
+  "resources/obsidian/templates/*.md",
+  "resources/obsidian_work/*.md",
+  "resources/obsidian_work/views/*.base",
+  "resources/claude/.claude/settings.json",
+  "resources/claude/.claude/hooks/*.sh",
+  "resources/claude/.claude/skills/*/SKILL.md",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = ["I", "RUF022", "FURB167", "C4"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
