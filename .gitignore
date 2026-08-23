@@ -7,3 +7,7 @@ __pycache__/
 build/
 dist/
 .ruff_cache/
+
+# Shipped documents some global gitignores exclude; re-include them explicitly.
+!AGENTS.md
+!**/AGENTS.md
