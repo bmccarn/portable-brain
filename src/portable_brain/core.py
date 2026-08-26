@@ -919,6 +919,15 @@ def validate_brain(target: str | Path, *, mode: str = "portable") -> ValidationR
                     ValidationIssue(relative, message)
                     for message in _stale_links(path, root, manifest)
                 )
+            if (
+                manifest is not None
+                and _group(relative, manifest) == "journal"
+                and relative.name != "index.md"
+            ):
+                warnings.extend(
+                    ValidationIssue(relative, message)
+                    for message in _journal_time_warnings(path)
+                )
     return ValidationResult(tuple(issues), tuple(warnings))
 
 
@@ -962,6 +971,36 @@ def _inbox_entries(root: Path) -> list[tuple[Path, Mapping[str, Any]]]:
         and _visible(path.relative_to(inbox))
         and path.relative_to(inbox) != Path("index.md")
     ]
+
+
+HEADING_TIME = re.compile(r"^## (\d\d:\d\d) — ", re.MULTILINE)
+
+
+def _journal_time_warnings(path: Path) -> list[str]:
+    """Journal headings must be measured: warn when they run backwards or past the clock."""
+    try:
+        _, body = parse_frontmatter(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, FrontmatterError):
+        return []
+    times = HEADING_TIME.findall(body)
+    warnings: list[str] = []
+    for earlier, later in zip(times, times[1:]):
+        if later < earlier:
+            warnings.append(
+                f"journal headings are not in chronological order: {earlier} then {later}; "
+                "times must be measured, not estimated"
+            )
+            break
+    now = datetime.now().astimezone()
+    if path.stem == now.date().isoformat():
+        clock = now.strftime("%H:%M")
+        future = [time for time in times if time > clock]
+        if future:
+            warnings.append(
+                f"journal heading {future[0]} is later than now ({clock}); "
+                "times must be measured, not estimated"
+            )
+    return warnings
 
 
 def _inbox_warnings(path: Path, root: Path, manifest: Mapping[str, Any]) -> list[str]:

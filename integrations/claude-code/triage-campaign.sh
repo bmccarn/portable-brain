@@ -34,8 +34,9 @@ SWEEP_PROMPT='Run the sweep skill over every page the recent triage campaign tou
 
 run_session() {  # $1 prompt, $2 model, $3 label
   local extra=(); [ -n "$2" ] && extra=(--model "$2")
+  local stamp="Measured time at launch: $(date '+%Y-%m-%d %H:%M %Z'). Run date again immediately before writing any journal heading; never estimate a time."
   ( cd "$BRAIN" && env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT PORTABLE_BRAIN_HEADLESS=1 \
-      claude -p "$1" --permission-mode acceptEdits --allowedTools "$ALLOWED" --disallowedTools "$DISALLOWED" \
+      claude -p "$stamp $1" --permission-mode acceptEdits --allowedTools "$ALLOWED" --disallowedTools "$DISALLOWED" \
       --output-format json "${extra[@]}" < /dev/null ) > "$BRAIN/.portable-brain/last-$3.json" 2>&1
   local code=$?
   python3 - "$BRAIN/.portable-brain/last-$3.json" <<'PY'

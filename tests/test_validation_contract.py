@@ -468,3 +468,33 @@ def test_new_journal_uses_local_measured_time(tmp_path: Path, run_cli: RunCli) -
     assert isinstance(generated, dict)
     at = datetime.fromisoformat(str(generated["at"]))
     assert at.tzinfo is not None and at.utcoffset() == after.utcoffset()
+
+
+def test_journal_times_that_run_backwards_or_past_the_clock_are_warnings(
+    tmp_path: Path, run_cli: RunCli, capsys: pytest.CaptureFixture[str]
+) -> None:
+    brain = tmp_path / "brain"
+    assert run_cli("init", str(brain)) == 0
+    backwards = brain / "journal" / "2026-01-05.md"
+    write_note(
+        backwards,
+        {"type": "Journal", "title": "2026-01-05"},
+        "# 2026-01-05\n\n## 10:00 — first\n\nactor: human:t\n\nOne.\n\n## 09:00 — second\n\nactor: human:t\n\nTwo.\n",
+    )
+    assert run_cli("validate", str(brain)) == 0
+    err = capsys.readouterr().err
+    assert (
+        "journal/2026-01-05.md: warning:" in err
+        and "not in chronological order: 10:00 then 09:00" in err
+    )
+
+    now = datetime.now().astimezone()
+    if now.strftime("%H:%M") < "23:58":
+        today = brain / "journal" / f"{now.date().isoformat()}.md"
+        write_note(
+            today,
+            {"type": "Journal", "title": now.date().isoformat()},
+            f"# {now.date().isoformat()}\n\n## 23:59 — later\n\nactor: human:t\n\nGuessed.\n",
+        )
+        assert run_cli("validate", str(brain)) == 0
+        assert "is later than now" in capsys.readouterr().err
