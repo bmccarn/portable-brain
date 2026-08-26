@@ -60,6 +60,49 @@ def test_paperless_script_requires_credentials_and_a_selection(
         module.main([str(tmp_path), "--url", "https://example.invalid"])
 
 
+def test_paperless_sidecar_cites_the_url_when_text_only_and_the_file_when_present() -> (
+    None
+):
+    module = load_paperless_module()
+    doc = {
+        "id": 42,
+        "title": "Water bill",
+        "created": "2026-08-01",
+        "added": "2026-08-02T10:00:00",
+        "correspondent": 1,
+        "document_type": 2,
+        "tags": [3],
+        "original_file_name": "bill.pdf",
+        "page_count": 2,
+    }
+    names = {
+        "correspondents": {1: "Utility Co"},
+        "document_types": {2: "Utility Bill"},
+        "tags": {3: "utilities"},
+    }
+    text_only = module.sidecar(
+        doc, names, "https://paperless.example.net", None, "Amount due 42.00", []
+    )
+    assert (
+        "file:" not in text_only
+        and "paperless_url: https://paperless.example.net/documents/42/details"
+        in text_only
+    )
+    assert "stays in Paperless" in text_only and "Amount due 42.00" in text_only
+    with_file = module.sidecar(
+        doc,
+        names,
+        "https://paperless.example.net",
+        "2026-08-01-paperless-42-water-bill.pdf",
+        "x",
+        ["note"],
+    )
+    assert (
+        "file: 2026-08-01-paperless-42-water-bill.pdf" in with_file
+        and "## Paperless notes" in with_file
+    )
+
+
 def test_campaign_runner_is_valid_bash_and_refuses_non_brains(tmp_path: Path) -> None:
     script = REPO / "integrations" / "claude-code" / "triage-campaign.sh"
     assert subprocess.run(["bash", "-n", str(script)], check=False).returncode == 0

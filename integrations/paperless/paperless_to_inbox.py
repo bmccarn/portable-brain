@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy Paperless-ngx documents into a Portable Brain inbox as PDF + metadata/OCR sidecar."""
+"""Copy Paperless-ngx documents into a Portable Brain inbox as metadata/OCR text (and, on request, the PDF)."""
 
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ def slug(text: str) -> str:
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", text.lower())).strip("-")[:60]
 
 
-def sidecar(doc: dict[str, Any], names: dict[str, dict[int, str]], url: str, filename: str, text: str, notes: list[str]) -> str:
+def sidecar(doc: dict[str, Any], names: dict[str, dict[int, str]], url: str, filename: str | None, text: str, notes: list[str]) -> str:
     lines = [
         "---",
         "captured_from: paperless-ngx",
@@ -87,12 +87,16 @@ def sidecar(doc: dict[str, Any], names: dict[str, dict[int, str]], url: str, fil
         f"added_to_paperless: {(doc.get('added') or '')[:19]}",
         f"original_file_name: {json.dumps(doc.get('original_file_name') or '')}",
         f"pages: {doc.get('page_count')}",
-        f"file: {filename}",
+        *([f"file: {filename}"] if filename else []),
         "---",
         "",
         f"# {doc['title']}",
         "",
-        f"OCR text from Paperless-ngx (document {doc['id']}); the file beside this note is the archived PDF.",
+        (
+            f"OCR text from Paperless-ngx (document {doc['id']}); the file beside this note is the archived PDF."
+            if filename
+            else f"OCR text from Paperless-ngx (document {doc['id']}); the archived PDF stays in Paperless at the URL above — cite it as the resource."
+        ),
         "",
     ]
     if notes:
@@ -113,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--since", help="only documents added to Paperless after YYYY-MM-DD")
     parser.add_argument("--limit", type=int, help="capture at most this many (oldest first)")
     parser.add_argument("--dest", type=Path, help="destination folder (default: <brain>/inbox/paperless)")
+    parser.add_argument("--with-files", action="store_true", help="also download each archived PDF beside its sidecar (default: text only; Paperless keeps the binary)")
     parser.add_argument("--recapture", action="store_true", help="capture documents already recorded as captured")
     parser.add_argument("--dry-run", action="store_true", help="list what would be captured and stop")
     args = parser.parse_args(argv)
@@ -151,16 +156,19 @@ def main(argv: list[str] | None = None) -> int:
     dest.mkdir(parents=True, exist_ok=True)
     for number, doc in enumerate(docs, 1):
         base = f"{(doc.get('created') or 'undated')[:10]}-paperless-{doc['id']}-{slug(doc['title'])}"
-        payload = api.bytes(f"documents/{doc['id']}/download/")
-        extension = ".pdf" if payload[:4] == b"%PDF" else Path(doc.get("original_file_name") or "").suffix or ".bin"
-        (dest / (base + extension)).write_bytes(payload)
+        filename: str | None = None
+        if args.with_files:
+            payload = api.bytes(f"documents/{doc['id']}/download/")
+            extension = ".pdf" if payload[:4] == b"%PDF" else Path(doc.get("original_file_name") or "").suffix or ".bin"
+            filename = base + extension
+            (dest / filename).write_bytes(payload)
         content = api.get(f"documents/{doc['id']}/?fields=content,notes")
         notes = [note.get("note", "") for note in content.get("notes") or []]
-        (dest / (base + ".md")).write_text(sidecar(doc, names, args.url.rstrip("/"), base + extension, (content.get("content") or "").strip(), notes), encoding="utf-8")
-        captured[str(doc["id"])] = base + extension
+        (dest / (base + ".md")).write_text(sidecar(doc, names, args.url.rstrip("/"), filename, (content.get("content") or "").strip(), notes), encoding="utf-8")
+        captured[str(doc["id"])] = filename or base + ".md"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(captured, indent=1, sort_keys=True), encoding="utf-8")
-        print(f"  {number:>3}. {base}{extension}")
+        print(f"  {number:>3}. {filename or base + '.md'}", flush=True)
     print(f"captured {len(docs)} into {dest}")
     return 0
 
