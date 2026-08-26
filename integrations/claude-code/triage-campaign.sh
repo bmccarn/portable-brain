@@ -23,6 +23,8 @@ command -v claude >/dev/null || { echo "claude is not on PATH" >&2; exit 2; }
 command -v portable-brain >/dev/null || { echo "portable-brain is not on PATH" >&2; exit 2; }
 
 LOCK="$BRAIN/.portable-brain/triage-campaign.lock"
+STOP="$BRAIN/.portable-brain/triage-campaign.stop"
+rm -f "$STOP"
 if [ -e "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then echo "another runner holds $LOCK" >&2; exit 1; fi
 echo $$ > "$LOCK"; trap 'rm -f "$LOCK"' EXIT
 
@@ -55,16 +57,21 @@ PY
 before=$(pending); echo "brain: $BRAIN"; echo "pending: $before"
 [ "$before" -eq 0 ] && { echo "inbox is empty; nothing to do"; exit 0; }
 [ "$DRY" -eq 1 ] && { echo "dry run: would run up to $MAX_PASSES pass(es), then sweep=$SWEEP"; exit 0; }
-pass=0
+pass=0; stopped=""
 while [ "$pass" -lt "$MAX_PASSES" ]; do
+  if [ -e "$STOP" ]; then stopped="stop file"; rm -f "$STOP"; echo "stop file found; not starting another pass"; break; fi
   left=$(pending); [ "$left" -eq 0 ] && break
   pass=$((pass + 1)); echo "== pass $pass ($(date '+%H:%M'), $left pending)"
   run_session "$PASS_PROMPT" "$MODEL" "pass" || echo "    (claude exited non-zero)"
   after=$(pending); echo "    pending now: $after"
-  if [ "$after" -ge "$left" ]; then echo "    no progress this pass; stopping so a human can look" >&2; break; fi
+  if [ "$after" -ge "$left" ]; then echo "    no progress this pass; stopping so a human can look" >&2; stopped="no progress"; break; fi
 done
 left=$(pending); echo "passes run: $pass; pending: $left"
 if [ "$SWEEP" -eq 1 ] && [ "$pass" -gt 0 ]; then
   echo "== closing sweep ($(date '+%H:%M'))"; run_session "$SWEEP_PROMPT" "${SWEEP_MODEL:-$MODEL}" "sweep" || echo "    (claude exited non-zero)"
 fi
-[ "$left" -eq 0 ]
+# Exit codes: 0 inbox empty · 3 stopped with items pending (max passes or stop file) · 1 a pass made no progress.
+if [ "$left" -eq 0 ]; then exit 0; fi
+if [ "$stopped" = "no progress" ]; then exit 1; fi
+echo "stopped with $left pending ($([ -n "$stopped" ] && echo "$stopped" || echo "max passes reached")); run again to continue"
+exit 3
