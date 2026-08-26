@@ -10,8 +10,12 @@
 # exits silently. Registered by .claude/settings.json, which travels with the brain.
 #
 # Edit the SENTINEL line to change "once per session" into "every stop".
+# Set PORTABLE_BRAIN_HEADLESS=1 to disable the gate for scripted runs.
 
 INPUT=$(cat)
+
+# A headless runner (see integrations/claude-code/triage-campaign.sh) journals each pass itself.
+[ -n "${PORTABLE_BRAIN_HEADLESS:-}" ] && exit 0
 
 BRAIN=""
 d="${CLAUDE_PROJECT_DIR:-$PWD}"

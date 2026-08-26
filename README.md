@@ -18,6 +18,8 @@ It is Markdown, YAML frontmatter, folders, and relative links. There is no app t
 2. **Tell your AI "triage my inbox."** It reads each item and files it where it belongs: the PDF moves to `assets/` with a source note that points at it, the article is preserved as evidence in `sources/`, the half-thought is folded into the wiki page that owns that subject, and a line goes into today's journal saying what came in, where it went, and why. The inbox empties. An empty inbox means nothing is pending.
 3. **Ask questions, and share the folder.** The AI answers from the wiki with citations back to the sources. When you want someone else to have it, zip the folder, push it to git, or drop it in a shared drive — they can read every file with `cat`, and their AI can pick up where yours left off because the rulebook travels with the brain.
 
+Drop eight hundred things at once and it does not try to swallow them whole: it surveys, clusters them by subject, writes a plan into the journal, and works through bounded passes — reading every item in each — then sweeps for contradictions across the lot. Every kind of file takes the same path: text is preserved verbatim, PDFs are read page by page, images and screenshots are viewed and transcribed as the AI's own labeled reading, and anything it cannot read is preserved and flagged rather than guessed at.
+
 The gate is on the way *out* of the inbox, not on the way in. Everything past the inbox has a clear shape and a clear owner; that rigor is what makes the brain trustworthy and shareable. But it is the AI's job to satisfy it, not yours.
 
 ## The shape of a brain
@@ -109,7 +111,7 @@ uv tool install .            # or: pipx install .   /   pip install .
 portable-brain init my-brain --domains personal travel --work --adapter obsidian claude
 portable-brain validate my-brain      # shape, links, secrets; warnings for the inbox
 portable-brain index my-brain         # regenerate the clean root and per-layer indexes
-portable-brain inspect my-brain       # layer counts, pending inbox items, open work
+portable-brain inspect my-brain       # layer counts, pending inbox (summarized when large), open work
 portable-brain new my-brain Concept kitchen-remodel --title "Kitchen remodel"
 portable-brain add-type my-brain Policy --group wiki --folder policies --sections Summary "Current term" Coverage History Follow-ups References
 ```
@@ -147,7 +149,8 @@ This is version 0.1 of the contract. [SPEC.md](SPEC.md) is the contract; three i
 - `src/portable_brain/resources/profiles/` — the domain overlays and the universal core.
 - `src/portable_brain/` — the optional command (`init`, `new`, `validate`, `index`, `inspect`, `archive`).
 - `starter/` — a generated, ready-to-copy brain. Never edited by hand; regenerate it with `init`.
-- `tests/` — contract tests for the CLI, validation, indexing, and the inbox.
+- `integrations/` — capture and automation scripts that feed or drive a brain (Paperless-ngx → inbox; a headless one-pass-per-session triage campaign runner). Not part of the package.
+- `tests/` — contract tests for the CLI, validation, indexing, the inbox, and shaping.
 
 Read [AGENTS.md](AGENTS.md) before changing anything: a semantic change updates the spec, the scaffold, the code, and the tests together, and `SPEC.md` stays byte-identical to its scaffold copy.
 

@@ -76,6 +76,22 @@ def _parser() -> argparse.ArgumentParser:
         "inspect", help="show groups, types, follow-ups, and index freshness"
     )
     inspect.add_argument("target", metavar="TARGET", type=Path)
+    inbox_mode = inspect.add_mutually_exclusive_group()
+    inbox_mode.add_argument(
+        "--inbox",
+        action="store_const",
+        const="list",
+        dest="inbox_mode",
+        help="list every pending inbox item, however many",
+    )
+    inbox_mode.add_argument(
+        "--summary",
+        action="store_const",
+        const="summary",
+        dest="inbox_mode",
+        help="summarize the inbox by folder, kind, text size, and dates",
+    )
+    inspect.set_defaults(inbox_mode="auto")
     add_type_parser = commands.add_parser(
         "add-type", help="add a configured type: manifest entry, folder, and template"
     )
@@ -125,14 +141,39 @@ def _warnings(items: Sequence[ValidationIssue]) -> None:
         print(f"{item.path}: warning: {item.message}", file=sys.stderr)
 
 
-def _inspection(target: Path) -> None:
+INBOX_LIST_LIMIT = 40
+
+
+def _human(count: int) -> str:
+    for unit, size in (("M", 1_000_000), ("K", 1_000)):
+        if count >= size:
+            return f"{count / size:.1f}{unit}"
+    return str(count)
+
+
+def _inspection(target: Path, inbox_mode: str = "auto") -> None:
     result = inspect_brain(target)
     print("groups:")
     for name, count in result.groups:
         print(f"  {name}: {count}")
-    print("inbox (pending triage):")
-    for path in result.inbox:
-        print(f"  {path}")
+    total = len(result.inbox)
+    if inbox_mode == "list" or (inbox_mode == "auto" and total <= INBOX_LIST_LIMIT):
+        print("inbox (pending triage):")
+        for path in result.inbox:
+            print(f"  {path}")
+    else:
+        folders = result.inbox_folders
+        print(
+            f"inbox (pending triage): {total} items in {len(folders)} folder(s); "
+            "run inspect --inbox for every path"
+        )
+        for folder in folders:
+            kinds = ", ".join(f"{kind} {count}" for kind, count in folder.kinds)
+            print(
+                f"  {folder.folder or '(root)'}: {folder.items} items; {kinds}; "
+                f"{_human(folder.text_chars)} chars of text; "
+                f"modified {folder.oldest}..{folder.newest}"
+            )
     print("types:")
     for name, group in result.types:
         print(f"  {name}: {group}")
@@ -186,7 +227,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 return 1
         elif arguments.command == "inspect":
-            _inspection(arguments.target)
+            _inspection(arguments.target, arguments.inbox_mode)
         elif arguments.command == "add-type":
             definition = add_type(
                 arguments.target,

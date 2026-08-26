@@ -6,6 +6,7 @@ import getpass
 import posixpath
 import re
 import shutil
+from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -117,6 +118,97 @@ class Inspection:
     follow_ups: tuple[Path, ...]
     indexes_fresh: bool
     inbox: tuple[Path, ...] = ()
+    inbox_folders: tuple[InboxFolder, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class InboxFolder:
+    """A cheap survey of one top-level inbox folder, for planning triage passes."""
+
+    folder: str
+    items: int
+    kinds: tuple[tuple[str, int], ...]
+    text_chars: int
+    oldest: str
+    newest: str
+
+
+KINDS: dict[str, str] = {
+    **dict.fromkeys((".md", ".markdown", ".txt", ".text", ".rtf"), "text"),
+    ".pdf": "pdf",
+    **dict.fromkeys(
+        (
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp",
+            ".heic",
+            ".heif",
+            ".tif",
+            ".tiff",
+            ".bmp",
+            ".svg",
+        ),
+        "image",
+    ),
+    **dict.fromkeys(
+        (".m4a", ".mp3", ".wav", ".aac", ".ogg", ".flac", ".opus"), "audio"
+    ),
+    **dict.fromkeys((".mp4", ".mov", ".mkv", ".webm", ".avi"), "video"),
+    **dict.fromkeys(
+        (".csv", ".tsv", ".json", ".xlsx", ".xls", ".numbers", ".yaml", ".yml"), "data"
+    ),
+    **dict.fromkeys(
+        (".docx", ".doc", ".pages", ".pptx", ".ppt", ".key", ".odt"), "office"
+    ),
+    **dict.fromkeys((".zip", ".tar", ".gz", ".tgz", ".7z", ".rar"), "archive"),
+    **dict.fromkeys((".eml", ".msg"), "email"),
+}
+TEXT_KINDS = frozenset({"text", "data", "email"})
+
+
+def item_kind(path: Path) -> str:
+    """Coarse kind of an inbox item, by extension."""
+    return KINDS.get(path.suffix.lower(), path.suffix.lower().lstrip(".") or "other")
+
+
+def inbox_folders(root: Path) -> tuple[InboxFolder, ...]:
+    """Summarize pending inbox items by top-level folder: counts, kinds, text size, dates."""
+    groups: dict[str, list[Path]] = {}
+    inbox = root / "inbox"
+    for path, _ in _inbox_entries(root):
+        relative = path.relative_to(inbox)
+        groups.setdefault(
+            relative.parts[0] if len(relative.parts) > 1 else "", []
+        ).append(path)
+    summaries: list[InboxFolder] = []
+    for folder in sorted(groups, key=lambda name: (name != "", name)):
+        paths = groups[folder]
+        kinds = Counter(item_kind(path) for path in paths)
+        chars = 0
+        for path in paths:
+            if item_kind(path) in TEXT_KINDS:
+                try:
+                    chars += len(path.read_text(encoding="utf-8", errors="replace"))
+                except OSError:
+                    continue
+        local_tz = datetime.now().astimezone().tzinfo
+        days = [
+            datetime.fromtimestamp(path.stat().st_mtime, tz=local_tz).date().isoformat()
+            for path in paths
+        ]
+        summaries.append(
+            InboxFolder(
+                folder,
+                len(paths),
+                tuple(sorted(kinds.items(), key=lambda item: (-item[1], item[0]))),
+                chars,
+                min(days),
+                max(days),
+            )
+        )
+    return tuple(summaries)
 
 
 def _now() -> str:
@@ -1109,6 +1201,7 @@ def inspect_brain(target: str | Path) -> Inspection:
         follows,
         not build_index(root, check=True).changed,
         pending,
+        inbox_folders(root),
     )
 
 

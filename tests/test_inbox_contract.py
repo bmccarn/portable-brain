@@ -160,3 +160,42 @@ def test_inbox_generated_index_is_still_governed(
     )
     assert run_cli("validate", str(brain)) == 1
     assert "inbox/index.md" in capsys.readouterr().err
+
+
+def test_inspect_summarizes_a_large_inbox_and_lists_it_on_request(
+    tmp_path: Path, run_cli: RunCli, capsys: pytest.CaptureFixture[str]
+) -> None:
+    brain = tmp_path / "brain"
+    assert run_cli("init", str(brain)) == 0
+    paperless = brain / "inbox" / "paperless"
+    photos = brain / "inbox" / "photos"
+    paperless.mkdir()
+    photos.mkdir()
+    for number in range(30):
+        (paperless / f"doc-{number}.pdf").write_bytes(b"%PDF fake")
+        (paperless / f"doc-{number}.md").write_text("x" * 100, encoding="utf-8")
+    for number in range(6):
+        (photos / f"shot-{number}.png").write_bytes(b"\x89PNG fake")
+    (brain / "inbox" / "memo.m4a").write_bytes(b"fake audio")
+    (brain / "inbox" / "note.txt").write_text("hello", encoding="utf-8")
+
+    assert run_cli("inspect", str(brain)) == 0
+    out = capsys.readouterr().out
+    assert "inbox (pending triage): 68 items in 3 folder(s)" in out
+    assert "(root): 2 items; audio 1, text 1; 5 chars of text" in out
+    assert "paperless: 60 items; pdf 30, text 30; 3.0K chars of text" in out
+    assert "photos: 6 items; image 6; 0 chars of text" in out
+    assert "inbox/paperless/doc-0.pdf" not in out
+
+    assert run_cli("inspect", str(brain), "--inbox") == 0
+    out = capsys.readouterr().out
+    assert "inbox (pending triage):\n" in out and "inbox/paperless/doc-0.pdf" in out
+    assert out.count("inbox/") >= 68
+
+    small = tmp_path / "small"
+    assert run_cli("init", str(small)) == 0
+    (small / "inbox" / "one.txt").write_text("one", encoding="utf-8")
+    assert run_cli("inspect", str(small)) == 0
+    assert "inbox/one.txt" in capsys.readouterr().out
+    assert run_cli("inspect", str(small), "--summary") == 0
+    assert "1 items in 1 folder(s)" in capsys.readouterr().out

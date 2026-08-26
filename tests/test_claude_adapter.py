@@ -23,9 +23,16 @@ def run_cli() -> RunCli:
 
 
 def run_hook(
-    brain: Path, tmp: Path, payload: dict[str, object], cwd: Path | None = None
+    brain: Path,
+    tmp: Path,
+    payload: dict[str, object],
+    cwd: Path | None = None,
+    headless: bool = False,
 ) -> str:
     env = {**os.environ, "TMPDIR": str(tmp), "CLAUDE_PROJECT_DIR": str(cwd or brain)}
+    env.pop("PORTABLE_BRAIN_HEADLESS", None)
+    if headless:
+        env["PORTABLE_BRAIN_HEADLESS"] = "1"
     result = subprocess.run(
         ["bash", str(brain / ".claude" / "hooks" / "session-end-gate.sh")],
         input=json.dumps(payload),
@@ -111,3 +118,12 @@ def test_session_end_gate_blocks_once_per_session_with_measured_state(
     outside = tmp_path / "elsewhere"
     outside.mkdir()
     assert run_hook(brain, sentinels, {"session_id": "outside"}, cwd=outside) == ""
+    assert run_hook(brain, sentinels, {"session_id": "headless"}, headless=True) == ""
+
+    triage = (brain / ".claude" / "skills" / "triage" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "run a campaign" in triage and "Reading different kinds of items" in triage
+    assert "Transcribed by" in triage and "never guess" in triage
+    agents = (brain / "AGENTS.md").read_text(encoding="utf-8")
+    assert "bounded passes" in agents
