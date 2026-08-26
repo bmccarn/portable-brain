@@ -57,12 +57,14 @@ def test_claude_adapter_ships_hook_settings_and_skills_that_validation_ignores(
     assert "session-end-gate.sh" in command and "CLAUDE_PROJECT_DIR" in command
     hook = brain / ".claude" / "hooks" / "session-end-gate.sh"
     assert hook.is_file() and os.access(hook, os.X_OK)
-    for name in ("triage", "sweep", "query", "session-end"):
+    for name in ("setup", "triage", "sweep", "query", "session-end"):
         skill = brain / ".claude" / "skills" / name / "SKILL.md"
         text = skill.read_text(encoding="utf-8")
         assert text.startswith("---\nname: " + name + "\n")
         assert "description:" in text and "AGENTS.md" in text
 
+    agents = (brain / "AGENTS.md").read_text(encoding="utf-8")
+    assert "## Setup" in agents and "## Owner's rules" in agents
     assert run_cli("validate", str(brain)) == 0
     assert capsys.readouterr().err == ""
     assert run_cli("index", str(brain), "--check") == 0

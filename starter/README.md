@@ -34,4 +34,4 @@ portable-brain index . --check
 
 Its presence is optional. Files remain canonical, and editor views or generated indexes never replace their meaning.
 
-If this brain carries the `claude` adapter (`.claude/`), Claude Code gets a once-per-session end-of-session review hook and the `/triage`, `/sweep`, `/query`, and `/session-end` skills; each is a procedure that points back to [AGENTS.md](AGENTS.md). Other agents follow the same sections in AGENTS.md directly.
+If this brain carries the `claude` adapter (`.claude/`), Claude Code gets a once-per-session end-of-session review hook and the `/setup`, `/triage`, `/sweep`, `/query`, and `/session-end` skills; each is a procedure that points back to [AGENTS.md](AGENTS.md). Other agents follow the same sections in AGENTS.md directly.

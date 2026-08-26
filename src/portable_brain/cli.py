@@ -10,11 +10,15 @@ from pathlib import Path
 from .core import (
     BrainValidationError,
     ValidationIssue,
+    add_domain,
+    add_type,
     archive_brain,
     build_index,
+    enable_work,
     init_brain,
     inspect_brain,
     new_note,
+    remove_type,
     validate_brain,
 )
 from .frontmatter import FrontmatterError
@@ -72,6 +76,42 @@ def _parser() -> argparse.ArgumentParser:
         "inspect", help="show groups, types, follow-ups, and index freshness"
     )
     inspect.add_argument("target", metavar="TARGET", type=Path)
+    add_type_parser = commands.add_parser(
+        "add-type", help="add a configured type: manifest entry, folder, and template"
+    )
+    add_type_parser.add_argument("target", metavar="TARGET", type=Path)
+    add_type_parser.add_argument(
+        "name", metavar="NAME", help="singular noun, e.g. Policy"
+    )
+    add_type_parser.add_argument(
+        "--group", required=True, choices=("wiki", "sources", "work")
+    )
+    add_type_parser.add_argument(
+        "--folder",
+        help="group-relative folder (default: kebab-case of NAME; '.' for the group root)",
+    )
+    add_type_parser.add_argument(
+        "--sections",
+        nargs="*",
+        help="ordered '## ' headings every document of this type carries "
+        "(default: the group's core recipe)",
+    )
+    remove_type_parser = commands.add_parser(
+        "remove-type", help="remove a configured type that no document uses"
+    )
+    remove_type_parser.add_argument("target", metavar="TARGET", type=Path)
+    remove_type_parser.add_argument("name", metavar="NAME")
+    add_domain_parser = commands.add_parser(
+        "add-domain", help="enable a packaged domain overlay in an existing brain"
+    )
+    add_domain_parser.add_argument("target", metavar="TARGET", type=Path)
+    add_domain_parser.add_argument(
+        "domain", metavar="DOMAIN", choices=available_domains()
+    )
+    enable_work_parser = commands.add_parser(
+        "enable-work", help="enable the strict work module in an existing brain"
+    )
+    enable_work_parser.add_argument("target", metavar="TARGET", type=Path)
     return parser
 
 
@@ -147,6 +187,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                 return 1
         elif arguments.command == "inspect":
             _inspection(arguments.target)
+        elif arguments.command == "add-type":
+            definition = add_type(
+                arguments.target,
+                arguments.name,
+                group=arguments.group,
+                folder=arguments.folder,
+                sections=arguments.sections,
+            )
+            location = (
+                definition["group"]
+                if definition["folder"] == "."
+                else f"{definition['group']}/{definition['folder']}"
+            )
+            print(
+                f"added type {arguments.name} ({location}/); "
+                f"sections: {', '.join(definition['sections']) or '(none)'}"
+            )
+        elif arguments.command == "remove-type":
+            remove_type(arguments.target, arguments.name)
+            print(f"removed type {arguments.name}")
+        elif arguments.command == "add-domain":
+            added = add_domain(arguments.target, arguments.domain)
+            print(
+                f"enabled domain {arguments.domain}; added types: {', '.join(added) or '(none)'}"
+            )
+        elif arguments.command == "enable-work":
+            added = enable_work(arguments.target)
+            print(f"enabled work; added types: {', '.join(added) or '(none)'}")
         return 0
     except BrainValidationError as error:
         _issues(error.issues)

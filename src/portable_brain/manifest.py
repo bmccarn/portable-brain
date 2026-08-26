@@ -88,6 +88,18 @@ def _profile(name: str) -> dict[str, Any]:
     return _yaml(resource.read_text(encoding="utf-8"), f"profile {name}")
 
 
+def domain_overlay(name: str) -> dict[str, Any]:
+    """Return one packaged domain overlay (types only)."""
+    if name not in available_domains():
+        raise ManifestError(f"unknown domain: {name}")
+    return _profile(name)
+
+
+def work_overlay() -> dict[str, Any]:
+    """Return the packaged work module: its group and its core work types."""
+    return _profile("work")
+
+
 def _mapping(value: object, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise ManifestError(f"manifest field {field!r} must be a mapping")

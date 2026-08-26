@@ -2,6 +2,12 @@
 
 All notable public changes to Portable Brain are recorded here.
 
+## Unreleased
+
+- Shaping a brain is now a conversation, not a hand edit: `add-type`, `remove-type`, `add-domain`, and `enable-work` adapt the manifest, folders, and templates of an existing brain; the `claude` adapter gains a `/setup` skill that interviews the owner (purpose, recurring kinds, tracked state, what must stay out), proposes the smallest shape, and applies it only after a yes; scaffold `AGENTS.md` gains a "Setup" section and an "Owner's rules" section; START-HERE and BOOTSTRAP are rewritten around the setup interview; `/sweep` proposes promoting recurring Concept documents to a type through the same interview.
+- Scaffold `.gitignore` re-includes `AGENTS.md` and `CLAUDE.md`.
+- Triage skill: judge dated state against today, group items by subject, drop pipeline tags.
+
 ## 0.1.0 - 2026-08-23
 
 First public release.

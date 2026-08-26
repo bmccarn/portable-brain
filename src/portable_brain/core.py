@@ -7,6 +7,7 @@ import posixpath
 import re
 import shutil
 from collections.abc import Iterable, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from importlib import resources
@@ -22,10 +23,13 @@ from .manifest import (
     MANIFEST_RELATIVE_PATH,
     SUPPORTED_ADAPTERS,
     ManifestError,
+    domain_overlay,
     is_valid_actor,
     load_manifest,
     load_profiles,
     type_directory,
+    validate_manifest,
+    work_overlay,
 )
 
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
@@ -1106,3 +1110,177 @@ def inspect_brain(target: str | Path) -> Inspection:
         not build_index(root, check=True).changed,
         pending,
     )
+
+
+DEFAULT_SECTIONS: dict[str, tuple[str, ...]] = {
+    "wiki": ("Summary", "Notes", "References"),
+    "sources": ("Citation", "Source material", "Notes"),
+    "work": ("Summary", "Current state", "Follow-ups", "Log", "References"),
+}
+
+
+def _folder_slug(name: str) -> str:
+    return "-".join(re.findall(r"[a-z0-9]+", name.lower())) or "items"
+
+
+def _write_manifest(root: Path, manifest: Mapping[str, Any]) -> None:
+    _yaml(root / MANIFEST_RELATIVE_PATH, manifest)
+
+
+def _materialize_type(root: Path, manifest: Mapping[str, Any], name: str) -> Path:
+    """Create a configured type's folder and template."""
+    definition = manifest["types"][name]
+    _type_path(root, manifest, name).mkdir(parents=True, exist_ok=True)
+    templates = root / "templates"
+    templates.mkdir(exist_ok=True)
+    actor = manifest.get("default_actor") or f"human:{getpass.getuser()}"
+    template = templates / _template_name(name)
+    template.write_text(_template(name, definition, actor), encoding="utf-8")
+    return template
+
+
+def add_type(
+    target: str | Path,
+    name: str,
+    *,
+    group: str,
+    folder: str | None = None,
+    sections: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    """Add one configured type: manifest entry, folder, and template."""
+    root = Path(target)
+    manifest = load_manifest(root)
+    if not isinstance(name, str) or not name.strip() or "\n" in name or "\r" in name:
+        raise ManifestError("type name must be a non-empty single line")
+    name = name.strip()
+    if name in manifest["types"]:
+        raise ManifestError(f"type already exists: {name}")
+    if name in RESERVED:
+        raise ManifestError(f"{name} is a reserved type")
+    if group == "journal":
+        raise ManifestError("journal accepts only the Journal type")
+    if group == "inbox":
+        raise ManifestError("inbox has no configured types; anything may land there")
+    if group not in manifest["groups"]:
+        hint = "; run portable-brain enable-work first" if group == "work" else ""
+        raise ManifestError(f"group is not configured: {group}{hint}")
+    definition = {
+        "group": group,
+        "folder": folder if folder is not None else _folder_slug(name),
+        "workflow": group == "work",
+        "sections": list(sections)
+        if sections is not None
+        else list(DEFAULT_SECTIONS[group]),
+    }
+    candidate = deepcopy(dict(manifest))
+    candidate["types"] = {**manifest["types"], name: definition}
+    manifest = validate_manifest(candidate)
+    _write_manifest(root, manifest)
+    _materialize_type(root, manifest, name)
+    return dict(manifest["types"][name])
+
+
+def remove_type(target: str | Path, name: str) -> None:
+    """Remove a configured type that no document uses; keeps the folder if not empty."""
+    root = Path(target)
+    manifest = load_manifest(root)
+    if name not in manifest["types"]:
+        raise ManifestError(f"unknown type: {name}")
+    if name == "Journal":
+        raise ManifestError("Journal is required by every brain")
+    used = sorted(
+        path.relative_to(root)
+        for group, entries in _grouped(root, manifest).items()
+        if group != "inbox"
+        for path, data in entries
+        if data.get("type") == name
+    )
+    if used:
+        raise ManifestError(
+            f"type {name} is used by {len(used)} document(s), e.g. {used[0]}; "
+            "move or retype them first"
+        )
+    directory = _type_path(root, manifest, name)
+    candidate = deepcopy(dict(manifest))
+    candidate["types"] = {k: v for k, v in manifest["types"].items() if k != name}
+    manifest = validate_manifest(candidate)
+    _write_manifest(root, manifest)
+    template = root / "templates" / _template_name(name)
+    if template.exists():
+        template.unlink()
+    if directory.parent != root and directory.is_dir() and not any(directory.iterdir()):
+        directory.rmdir()
+
+
+def add_domain(target: str | Path, name: str) -> list[str]:
+    """Enable a packaged domain overlay in an existing brain; returns the types added."""
+    root = Path(target)
+    manifest = load_manifest(root)
+    if name in manifest["domains"]:
+        raise ManifestError(f"domain is already enabled: {name}")
+    overlay = domain_overlay(name)
+    include_work = "work" in manifest["groups"]
+    types = dict(manifest["types"])
+    added: list[str] = []
+    for type_name, raw in overlay.get("types", {}).items():
+        if not isinstance(raw, Mapping):
+            raise ManifestError(f"domain {name} has an invalid type {type_name}")
+        if raw.get("group") == "work" and not include_work:
+            continue
+        if type_name in types:
+            raise ManifestError(
+                f"domain {name} defines type {type_name}, which already exists; "
+                "remove it first"
+            )
+        types[type_name] = dict(raw)
+        added.append(type_name)
+    candidate = deepcopy(dict(manifest))
+    candidate["types"] = types
+    candidate["domains"] = [*manifest["domains"], name]
+    manifest = validate_manifest(candidate)
+    _write_manifest(root, manifest)
+    for type_name in added:
+        _materialize_type(root, manifest, type_name)
+    return added
+
+
+def enable_work(target: str | Path) -> list[str]:
+    """Enable the strict work module in an existing brain; returns the types added."""
+    root = Path(target)
+    manifest = load_manifest(root)
+    if "work" in manifest["groups"]:
+        raise ManifestError("the work module is already enabled")
+    result = validate_brain(root)
+    if not result.valid:
+        raise BrainValidationError(result.issues)
+    work = work_overlay()
+    groups = dict(manifest["groups"])
+    groups["work"] = dict(work["groups"]["work"])
+    types = dict(manifest["types"])
+    added: list[str] = []
+    overlays = [work.get("types", {})]
+    overlays.extend(
+        domain_overlay(domain).get("types", {}) for domain in manifest["domains"]
+    )
+    for overlay in overlays:
+        for type_name, raw in overlay.items():
+            if (
+                isinstance(raw, Mapping)
+                and raw.get("group") == "work"
+                and type_name not in types
+            ):
+                types[type_name] = dict(raw)
+                added.append(type_name)
+    candidate = deepcopy(dict(manifest))
+    candidate["groups"] = groups
+    candidate["types"] = types
+    candidate["modules"] = ["work"]
+    manifest = validate_manifest(candidate)
+    _write_manifest(root, manifest)
+    (root / "work").mkdir(exist_ok=True)
+    for type_name in added:
+        _materialize_type(root, manifest, type_name)
+    if "obsidian" in manifest["adapters"]:
+        _copy(_resources().joinpath("obsidian_work"), root)
+    build_index(root)
+    return added

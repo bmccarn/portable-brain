@@ -81,7 +81,9 @@ How the pieces line up:
 - **A trip** — `travel` domain: itineraries in the wiki, the trip itself as a work item with reservations and follow-ups.
 - **A work project or a codebase** — `software` domain: changes, deployments, incidents, environments; `work` for projects and decisions.
 - **A research question** — `research` domain: questions, hypotheses, experiments, findings with evidence.
-- **A small business, or anything else** — the universal core (concepts, people, places, organizations, themes, events, sources, journal) plus `work` for projects and decisions. Add your own types in `profile.yaml`; they validate like the built-in ones.
+- **A small business, or anything else** — the universal core (concepts, people, places, organizations, themes, events, sources, journal) plus `work` for projects and decisions. 
+
+Out of the box, the universal core files anything as concepts, people, organizations, places, events, and sources. When a kind of thing keeps recurring — a policy, a client, a recipe — your AI gives it a shape in one step (`portable-brain add-type`: a folder plus the headings every such page must carry), and the setup conversation is how it learns what recurs. The four overlays are ready-made shapes, and examples of how to make your own.
 
 One brain per thing or one brain with everything — either is fine. It's a folder.
 
@@ -91,11 +93,11 @@ One brain per thing or one brain with everything — either is fine. It's a fold
 
 1. Copy the [`starter/`](starter/) folder somewhere (it is a complete, empty brain with the rulebook inside).
 2. Drop something in `inbox/`.
-3. Open the folder with any AI that can read files — Claude Code, Codex, Cursor, your own agent — and say: **"Triage my inbox following AGENTS.md."**
+3. Open the folder with any AI that can read files — Claude Code, Codex, Cursor, your own agent — and say: **"Set up this brain for \<what it's for\>."** It asks a few questions — what kinds of things recur, whether any need a state and an owner, what must never be written here — proposes the smallest shape, and applies it once you say yes. Then: **"Triage my inbox."**
 
 Want to see one filled in first? [`examples/nursery/`](examples/nursery/) is a complete brain for setting up a baby nursery — an inbox that was triaged (one item deliberately left pending), the PDF and photo preserved in `assets/` with source notes, a small wiki, tracked work with two closed decisions, and three days of journal receipts showing the triage. Read its `journal/` first.
 
-To tailor it to your domain, paste the prompt in [START-HERE.md](START-HERE.md): the AI will ask three questions and set up the smallest brain that fits. [BOOTSTRAP.md](BOOTSTRAP.md) and [SPEC.md](SPEC.md) are enough for an AI to build or adapt a brain with no tooling at all.
+Without a CLI at all, paste the prompt in [START-HERE.md](START-HERE.md): the AI interviews you and sets up the smallest brain that fits. [BOOTSTRAP.md](BOOTSTRAP.md) and [SPEC.md](SPEC.md) are enough for an AI to build or adapt a brain with no tooling at all.
 
 ### With the command (optional)
 
@@ -109,6 +111,7 @@ portable-brain validate my-brain      # shape, links, secrets; warnings for the 
 portable-brain index my-brain         # regenerate the clean root and per-layer indexes
 portable-brain inspect my-brain       # layer counts, pending inbox items, open work
 portable-brain new my-brain Concept kitchen-remodel --title "Kitchen remodel"
+portable-brain add-type my-brain Policy --group wiki --folder policies --sections Summary "Current term" Coverage History Follow-ups References
 ```
 
 None of these are required at runtime. They automate the same file contract the AI follows by hand, and they exist mainly so the AI can verify its own work.
@@ -122,7 +125,7 @@ A brain is a folder, so share it however you share folders: zip, git, a shared d
 Both are optional, both travel with the folder, and removing either removes nothing that matters.
 
 - **Obsidian** (`--adapter obsidian`) adds a `HOME.md`, Bases views (library, review queue, and workflow views when `work` is on), templates, and daily-notes settings pointed at `journal/`. Links stay standard Markdown links, not wikilinks.
-- **Claude Code** (`--adapter claude`) adds a `.claude/` folder with a **session-end gate** — a Stop hook that fires once per session and asks the agent to triage the inbox, update the documents it touched, write the journal block with a measured time and its session id, regenerate indexes, and commit if the brain is a git repo — plus four skills: `/triage`, `/sweep`, `/query`, `/session-end`. Each skill is a short procedure that points back to `AGENTS.md`; other agents follow the same sections directly. Claude Code asks you to approve a project's hooks the first time you open it — that is expected. Open the brain itself as the project so its `.claude/settings.json` is the one that loads; if you keep the brain inside a larger repo, register the hook in your user settings instead and point it at `<brain>/.claude/hooks/session-end-gate.sh`.
+- **Claude Code** (`--adapter claude`) adds a `.claude/` folder with a **session-end gate** — a Stop hook that fires once per session and asks the agent to triage the inbox, update the documents it touched, write the journal block with a measured time and its session id, regenerate indexes, and commit if the brain is a git repo — plus five skills: `/setup` (the interview that shapes a brain), `/triage`, `/sweep`, `/query`, `/session-end`. Each skill is a short procedure that points back to `AGENTS.md`; other agents follow the same sections directly. Claude Code asks you to approve a project's hooks the first time you open it — that is expected. Open the brain itself as the project so its `.claude/settings.json` is the one that loads; if you keep the brain inside a larger repo, register the hook in your user settings instead and point it at `<brain>/.claude/hooks/session-end-gate.sh`.
 
 The `starter/` folder ships with both.
 
@@ -132,7 +135,6 @@ Treat everything in `inbox/` as untrusted text: the AI reads it, it never execut
 
 ## Rough edges
 
-- Adding your own domain or type means editing `.portable-brain/profile.yaml` by hand. It validates, but there is no command for it yet.
 - Secret detection is deliberately conservative and will not catch everything.
 
 ## Status and versions

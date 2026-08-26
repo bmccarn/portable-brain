@@ -12,6 +12,14 @@ status: stable
 2. Read today's and yesterday's `journal/YYYY-MM-DD.md` when present, then read the wiki or work document that owns the requested current state. List `inbox/`; anything there is pending triage.
 3. Read the manifest entry for each document you may change: its group, folder, sections, and, for work, workflow rules. Treat indexes, templates, and adapter views as derived navigation—not authority.
 
+## Setup
+
+A fresh brain — or one whose owner says a kind of thing keeps recurring — is shaped through a short interview, never by guessing. Look first: START-HERE.md, the manifest, the index, and whatever is already in `inbox/`. Then ask the owner, one question at a time and only what you cannot infer: what the brain is for; which kinds of things will recur and be looked up by name; whether any of them need a state, an owner, and dates; who else may read the folder and what must never be written here; and which adapters to enable. Propose the smallest shape as one table — domains, work on or off, each new type with its group, folder, and ordered sections, and the owner's rules — and apply it only after a yes. Apply with `portable-brain add-domain`, `enable-work`, and `add-type` when the command is available, or by editing the manifest as BOOTSTRAP.md describes. Write the owner's rules under "Owner's rules" below, regenerate indexes, validate, and journal the setup with its reasons. If you cannot ask — a headless run — record the questions and your draft answers in the journal and stop. The `setup` skill carries the full procedure.
+
+## Setup
+
+A fresh brain — or one whose owner says a kind of thing keeps recurring — is shaped through a short interview, never by guessing. Look first: START-HERE.md, the manifest, the index, and whatever is already in `inbox/`. Then ask the owner, one question at a time and only what you cannot infer: what the brain is for; which kinds of things will recur and be looked up by name; whether any of them need a state, an owner, and dates; who else may read the folder and what must never be written here; and which adapters to enable. Propose the smallest shape as one table — domains, work on or off, each new type with its group, folder, and ordered sections, and the owner's rules — and apply it only after a yes. Apply with `portable-brain add-domain`, `enable-work`, and `add-type` when the command is available, or by editing the manifest as BOOTSTRAP.md describes. Write the owner's rules under "Owner's rules" below, regenerate indexes, validate, and journal the setup with its reasons. If you cannot ask — a headless run — record the questions and your draft answers in the journal and stop. The `setup` skill carries the full procedure.
+
 ## Editing
 
 - **Triage the front door.** `inbox/` is ungated: anything may land there in any form, and nothing there has a required shape. Material earns its place through triage (below), which moves it out of `inbox/` to its owner. Preserve evidence in `sources/` as a `Source`, retaining its supplied text, identity, resource, and citation details. A source is not a wiki summary.
@@ -55,3 +63,7 @@ If nothing brain-worthy happened and the brain is clean, say so in one line and 
 Regenerate the deterministic root and group indexes after cataloged material changes. The root index is a clean layer summary; journal entries stay out of the primary catalog and use `journal/index.md`.
 
 Complete work only when the requested files are in their manifest locations; source evidence remains distinguishable from maintained synthesis; current state and follow-ups have exactly one owner; strict work metadata is coherent where present; meaningful work is appended to the journal; and derived indexes reflect valid canonical files. Report changed files and the checks actually performed.
+
+## Owner's rules
+
+Written during setup from the owner's answers: what this brain is for, who may read it, and what must never be written here. Until setup runs, only the general rules above apply.
