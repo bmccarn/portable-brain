@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from importlib import resources
 from importlib.resources.abc import Traversable
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
@@ -984,7 +985,7 @@ def _journal_time_warnings(path: Path) -> list[str]:
         return []
     times = HEADING_TIME.findall(body)
     warnings: list[str] = []
-    for earlier, later in zip(times, times[1:]):
+    for earlier, later in pairwise(times):
         if later < earlier:
             warnings.append(
                 f"journal headings are not in chronological order: {earlier} then {later}; "
