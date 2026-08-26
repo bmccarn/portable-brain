@@ -2,3 +2,7 @@
 .trash/
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
+
+# Some global gitignores exclude agent instruction files; a brain ships them.
+!AGENTS.md
+!CLAUDE.md
