@@ -12,6 +12,22 @@ Portable Brain is a way of laying out a folder so that a person can dump things 
 
 It is Markdown, YAML frontmatter, folders, and relative links. There is no app to run, no database, no embedding service, no account. A small Python command and an Obsidian workspace are both optional conveniences — mostly for the AI's benefit — and a brain keeps working if you delete either.
 
+## Workflow at a glance
+
+```mermaid
+flowchart LR
+    Inbox[Inbox: unprocessed items] --> Triage[AI-assisted triage]
+    Triage --> Sources[Sources: preserved evidence]
+    Triage --> Assets[Assets: original files]
+    Sources --> Wiki[Wiki: maintained understanding]
+    Triage --> Journal[Journal: append-only receipts]
+    Wiki -. cites .-> Sources
+```
+
+*Things come in, the AI files them, and the wiki grows. It's all ordinary files; Python and Obsidian are optional.*
+
+[Explore a complete nursery example](examples/nursery/) with sources, wiki pages, tracked decisions, and journal entries.
+
 ## What it feels like
 
 1. **Drop things in `inbox/`.** A PDF, a photo, a pasted article, a half-formed thought in a text file, a folder of receipts. No naming rules, no metadata, no form. It is an ungated front door.
